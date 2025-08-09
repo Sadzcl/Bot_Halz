@@ -1,12 +1,9 @@
+require('dotenv').config()
 
-// Custom Prefix
-global.admin = ['6288226278071@s.whatsapp.net'] // Sesuaikan Nomor Admin
-
+global.admin = [process.env.ADMIN_NUMBER] // Ambil dari .env
 global.prefix = '!'
-
 global.image = './database/image/KucingLucu.jpeg'
 
-// Custom Message
 global.mess = {
     wait: '☕ *One Moment, Please*',
     error: '⚠ *Gagal Saat Melakukan Proses*',
