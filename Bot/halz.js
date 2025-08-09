@@ -1,20 +1,19 @@
-
-
 // Import Module
-require('./zcl')
-require('./database/Menu/HalzMenu')
-const fs = require('fs');
-const axios = require('axios');
+require("./zcl");
+require("./database/Menu/HalzMenu");
+const fs = require("fs");
+const axios = require("axios");
 
 // Import Scrape
-const Ai4Chat = require('./scrape/Ai4Chat');
-const tiktok2 = require('./scrape/Tiktok');
+const Ai4Chat = require("./scrape/Ai4Chat");
+const tiktok2 = require("./scrape/Tiktok");
 
 module.exports = async (halz, m) => {
     const msg = m.messages[0];
     if (!msg.message) return;
 
-    const body = msg.message.conversation || msg.message.extendedTextMessage?.text || "";
+    const body =
+        msg.message.conversation || msg.message.extendedTextMessage?.text || "";
     const sender = msg.key.remoteJid;
     const pushname = msg.pushName || "Halz";
     const args = body.slice(1).trim().split(" ");
@@ -23,124 +22,155 @@ module.exports = async (halz, m) => {
 
     if (!body.startsWith(prefix)) return;
 
-    const halzreply = (teks) => halz.sendMessage(sender, { text: teks }, { quoted: msg });
-    const isGroup = sender.endsWith('@g.us');
-    const isAdmin = (admin.includes(sender))
+    const halzreply = (teks) =>
+        halz.sendMessage(sender, { text: teks }, { quoted: msg });
+    const isGroup = sender.endsWith("@g.us");
+    const isAdmin = admin.includes(sender);
     const menuImage = fs.readFileSync(image);
 
-switch (command) {
-
-// Menu
-case "menu": {
-    await halz.sendMessage(sender,
-        {
-            image: menuImage,
-            caption: halzmenu,
-            mentions: [sender]
-        },
-    { quoted: msg }
-    )
-}
-break
-
-// Hanya Admin
-case "admin": {
-    if (!isAdmin) return halzreply(mess.admin); // COntoh Penerapan Hanya Admin
-    halzreply("🎁 *Kamu Adalah Admin*"); // Admin Akan Menerima Pesan Ini
-}
-break
-
-// Hanya Group
-case "group": {
-    if (!isGroup) return halzreply(mess.group); // Contoh Penerapan Hanya Group
-    halzreply("🎁 *Kamu Sedang Berada Di Dalam Grup*"); // Pesan Ini Hanya Akan Dikirim Jika Di Dalam Grup
-}
-break
-
-// AI Chat
-case "gdrive": {
-    if (!q) return halzreply("⚠️ *Contoh:* !gdrive ruu ketenagakerjaan");
-
-    const fs = require("fs");
-    const path = require("path");
-    const axios = require("axios");
-    const mime = require("mime-types");
-
-    const fileList = require("./file_list.json");
-    const keyword = q.toLowerCase();
-    const match = fileList.find(item => item.nama.toLowerCase().includes(keyword));
-
-    if (!match) return halzreply(`❌ File dengan kata kunci "${q}" tidak ditemukan.`);
-
-    const gdriveLink = match.link;
-    const fileIdMatch = gdriveLink.match(/\/d\/(.+?)\//);
-    if (!fileIdMatch || !fileIdMatch[1]) return halzreply("❌ Link tidak valid.");
-
-    const fileId = fileIdMatch[1];
-    const downloadUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
-
-    halzreply(mess.wait);
-
-    try {
-        const response = await axios({
-            url: downloadUrl,
-            method: "GET",
-            responseType: "stream"
-        });
-
-        // Ambil nama file dari header
-        let fileName = `file_${Date.now()}.bin`;
-        const disposition = response.headers["content-disposition"];
-        const matchName = disposition?.match(/filename="(.+)"/);
-        if (matchName && matchName[1]) {
-            fileName = matchName[1];
-        }
-
-        const filePath = path.join(__dirname, fileName);
-
-        let totalBytes = 0;
-        response.data.on("data", (chunk) => {
-            totalBytes += chunk.length;
-            if (totalBytes > 100 * 1024 * 1024) {
-                response.data.destroy();
-                halzreply("❌ File terlalu besar (lebih dari 100MB).");
+    switch (command) {
+        // Menu
+        case "menu":
+            {
+                await halz.sendMessage(
+                    sender,
+                    {
+                        image: menuImage,
+                        caption: halzmenu,
+                        mentions: [sender],
+                    },
+                    { quoted: msg },
+                );
             }
-        });
+            break;
 
-        const writer = fs.createWriteStream(filePath);
-        response.data.pipe(writer);
-
-        writer.on("finish", async () => {
-            const mimetype = mime.lookup(fileName) || "application/octet-stream";
-
-            let messageOptions = {
-                mimetype,
-                fileName,
-                caption: `📁 File: ${fileName}`
-            };
-
-            if (mimetype.startsWith("image/")) {
-                await halz.sendMessage(sender, { image: { url: filePath }, ...messageOptions }, { quoted: msg });
-            } else if (mimetype.startsWith("video/")) {
-                await halz.sendMessage(sender, { video: { url: filePath }, ...messageOptions }, { quoted: msg });
-            } else {
-                await halz.sendMessage(sender, { document: { url: filePath }, ...messageOptions }, { quoted: msg });
+        // Hanya Admin
+        case "admin":
+            {
+                if (!isAdmin) return halzreply(mess.admin); // COntoh Penerapan Hanya Admin
+                halzreply("🎁 *Kamu Adalah Admin*"); // Admin Akan Menerima Pesan Ini
             }
+            break;
 
-            fs.unlinkSync(filePath); // Hapus file setelah dikirim
-        });
+        // Hanya Group
+        case "group":
+            {
+                if (!isGroup) return halzreply(mess.group); // Contoh Penerapan Hanya Group
+                halzreply("🎁 *Kamu Sedang Berada Di Dalam Grup*"); // Pesan Ini Hanya Akan Dikirim Jika Di Dalam Grup
+            }
+            break;
 
-        writer.on("error", () => {
-            halzreply("❌ Gagal menyimpan file.");
-        });
+        // AI Chat
+        case "kirimkan":
+            {
+                if (!q)
+                    return halzreply(
+                        "⚠️ *Contoh:* !kirimkan ruu ketenagakerjaan",
+                    );
 
-    } catch (err) {
-        console.error("GDrive download error:", err.message);
-        halzreply("❌ Terjadi kesalahan saat mengunduh file.");
-    }
-}
-break;
-/*
+                const fs = require("fs");
+                const path = require("path");
+                const axios = require("axios");
+                const mime = require("mime-types");
+
+                const fileList = require("./file_list.json");
+                const keyword = q.toLowerCase();
+                const match = fileList.find((item) =>
+                    item.nama.toLowerCase().includes(keyword),
+                );
+
+                if (!match)
+                    return halzreply(
+                        `❌ File dengan kata kunci "${q}" tidak ditemukan.`,
+                    );
+
+                const kirimkanLink = match.link;
+                const fileIdMatch = kirimkanLink.match(/\/d\/(.+?)\//);
+                if (!fileIdMatch || !fileIdMatch[1])
+                    return halzreply("❌ Link tidak valid.");
+
+                const fileId = fileIdMatch[1];
+                const downloadUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+
+                halzreply(mess.wait);
+
+                try {
+                    const response = await axios({
+                        url: downloadUrl,
+                        method: "GET",
+                        responseType: "stream",
+                    });
+
+                    // Ambil nama file dari header
+                    let fileName = `file_${Date.now()}.bin`;
+                    const disposition = response.headers["content-disposition"];
+                    const matchName = disposition?.match(/filename="(.+)"/);
+                    if (matchName && matchName[1]) {
+                        fileName = matchName[1];
+                    }
+
+                    const filePath = path.join(__dirname, fileName);
+
+                    let totalBytes = 0;
+                    response.data.on("data", (chunk) => {
+                        totalBytes += chunk.length;
+                        if (totalBytes > 100 * 1024 * 1024) {
+                            response.data.destroy();
+                            halzreply(
+                                "❌ File terlalu besar (lebih dari 100MB).",
+                            );
+                        }
+                    });
+
+                    const writer = fs.createWriteStream(filePath);
+                    response.data.pipe(writer);
+
+                    writer.on("finish", async () => {
+                        const mimetype =
+                            mime.lookup(fileName) || "application/octet-stream";
+
+                        let messageOptions = {
+                            mimetype,
+                            fileName,
+                            caption: `📁 File: ${fileName}`,
+                        };
+
+                        if (mimetype.startsWith("image/")) {
+                            await halz.sendMessage(
+                                sender,
+                                { image: { url: filePath }, ...messageOptions },
+                                { quoted: msg },
+                            );
+                        } else if (mimetype.startsWith("video/")) {
+                            await halz.sendMessage(
+                                sender,
+                                { video: { url: filePath }, ...messageOptions },
+                                { quoted: msg },
+                            );
+                        } else {
+                            await halz.sendMessage(
+                                sender,
+                                {
+                                    document: { url: filePath },
+                                    ...messageOptions,
+                                },
+                                { quoted: msg },
+                            );
+                        }
+
+                        fs.unlinkSync(filePath); // Hapus file setelah dikirim
+                    });
+
+                    writer.on("error", () => {
+                        halzreply("❌ Gagal menyimpan file.");
+                    });
+                } catch (err) {
+                    console.error("GDrive download error:", err.message);
+                    halzreply("❌ Terjadi kesalahan saat mengunduh file.");
+                }
+            }
+            break;
+        /*
 case "ai": {
     if (!q) return halzreply("☘️ *Contoh:* !ai Apa itu JavaScript?");
         halzreply(mess.wait);
@@ -264,6 +294,8 @@ case "quote": {
 }
 break;
 */
-        default: { halzreply(mess.default) }
+        default: {
+            halzreply(mess.default);
+        }
     }
-}
+};
