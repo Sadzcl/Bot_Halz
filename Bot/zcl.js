@@ -1,6 +1,6 @@
 require('dotenv').config()
 
-global.admin = [process.env.ADMIN_NUMBER] // Ambil dari .env
+global.admin = [process.env.ADMIN_NUMBER]
 global.prefix = '!'
 global.image = './database/image/KucingLucu.jpeg'
 
