@@ -22,6 +22,7 @@ const chalk = require("chalk");
 const readline = require("readline");
 
 // Metode Pairing
+
 const usePairingCode = true;
 
 // Prompt input di terminal
