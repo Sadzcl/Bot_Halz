@@ -2,7 +2,9 @@
 require("./zcl");
 require("./database/Menu/HalzMenu");
 const fs = require("fs");
+const path = require("path");
 const axios = require("axios");
+const mime = require("mime-types");
 
 // Import Scrape
 const Ai4Chat = require("./scrape/Ai4Chat");
@@ -68,10 +70,6 @@ module.exports = async (halz, m) => {
                         "⚠️ *Contoh:* !kirimkan ruu ketenagakerjaan",
                     );
 
-                const fs = require("fs");
-                const path = require("path");
-                const axios = require("axios");
-                const mime = require("mime-types");
 
                 const fileList = require("./file_list.json");
                 const keyword = q.toLowerCase();
