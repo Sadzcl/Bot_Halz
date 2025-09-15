@@ -25,6 +25,9 @@ const readline = require("readline");
 
 const usePairingCode = true;
 
+// Connection guard to prevent multiple simultaneous connections
+let isConnecting = false;
+
 // Prompt input di terminal
 async function question(promt) {
     process.stdout.write(promt);
@@ -41,6 +44,12 @@ async function question(promt) {
 }
 
 async function connectToWhatsApp() {
+    if (isConnecting) {
+        console.log(chalk.yellow("⚠️ Koneksi sedang berlangsung, menunggu..."));
+        return;
+    }
+    
+    isConnecting = true;
     const { state, saveCreds } = await useMultiFileAuthState("./HalzSesi");
 
     // Versi WA terbaru
@@ -91,6 +100,7 @@ async function connectToWhatsApp() {
             }
         } else if (connection === "open") {
             console.log(chalk.green("✔ Bot Berhasil Terhubung Ke WhatsApp"));
+            isConnecting = false;
         }
     });
 
