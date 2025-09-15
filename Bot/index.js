@@ -49,7 +49,6 @@ async function connectToWhatsApp() {
 
     const halz = makeWASocket({
         logger: pino({ level: "silent" }),
-        printQRInTerminal: !usePairingCode,
         auth: state,
         browser: ["Ubuntu", "Chrome", "20.0.04"],
         version: version,
@@ -73,12 +72,23 @@ async function connectToWhatsApp() {
 
     // Info koneksi
     halz.ev.on("connection.update", (update) => {
-        const { connection } = update;
+        const { connection, lastDisconnect } = update;
         if (connection === "close") {
+            const shouldReconnect = (lastDisconnect?.error)?.output?.statusCode !== 403;
             console.log(
-                chalk.red("❌ Koneksi Terputus, Mencoba Menyambung Ulang"),
+                chalk.red("❌ Koneksi Terputus"),
+                lastDisconnect?.error?.output?.statusCode,
+                lastDisconnect?.error?.output?.payload?.message
             );
-            connectToWhatsApp();
+            
+            if (shouldReconnect) {
+                console.log(chalk.yellow("🔄 Mencoba menyambung ulang dalam 5 detik..."));
+                setTimeout(() => {
+                    connectToWhatsApp();
+                }, 5000);
+            } else {
+                console.log(chalk.red("❌ Bot dibanned atau kredensial bermasalah. Tidak akan mencoba lagi."));
+            }
         } else if (connection === "open") {
             console.log(chalk.green("✔ Bot Berhasil Terhubung Ke WhatsApp"));
         }
