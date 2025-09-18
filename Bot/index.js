@@ -48,7 +48,7 @@ async function connectToWhatsApp() {
         console.log(chalk.yellow("⚠️ Koneksi sedang berlangsung, menunggu..."));
         return;
     }
-    
+
     isConnecting = true;
     const { state, saveCreds } = await useMultiFileAuthState("./HalzSesi");
 
@@ -83,68 +83,34 @@ async function connectToWhatsApp() {
     halz.ev.on("connection.update", (update) => {
         const { connection, lastDisconnect } = update;
         if (connection === "close") {
-            const shouldReconnect = (lastDisconnect?.error)?.output?.statusCode !== 403;
+            const shouldReconnect =
+                lastDisconnect?.error?.output?.statusCode !== 403;
             console.log(
                 chalk.red("❌ Koneksi Terputus"),
                 lastDisconnect?.error?.output?.statusCode,
-                lastDisconnect?.error?.output?.payload?.message
+                lastDisconnect?.error?.output?.payload?.message,
             );
-            
+
             if (shouldReconnect) {
-                console.log(chalk.yellow("🔄 Mencoba menyambung ulang dalam 5 detik..."));
+                console.log(
+                    chalk.yellow(
+                        "🔄 Mencoba menyambung ulang dalam 5 detik...",
+                    ),
+                );
                 setTimeout(() => {
                     connectToWhatsApp();
                 }, 5000);
             } else {
-                console.log(chalk.red("❌ Bot dibanned atau kredensial bermasalah. Tidak akan mencoba lagi."));
+                console.log(
+                    chalk.red(
+                        "❌ Bot dibanned atau kredensial bermasalah. Tidak akan mencoba lagi.",
+                    ),
+                );
             }
         } else if (connection === "open") {
             console.log(chalk.green("✔ Bot Berhasil Terhubung Ke WhatsApp"));
             isConnecting = false;
         }
-    });
-
-    // Respon pesan masuk
-    halz.ev.on("messages.upsert", async (m) => {
-        const msg = m.messages[0];
-        if (!msg.message) return;
-
-        const body = (
-            msg.message.conversation ||
-            msg.message.extendedTextMessage?.text ||
-            ""
-        ).trim();
-        const sender = msg.key.remoteJid;
-        const pushname = msg.pushName || "Halz";
-
-        // Log pesan masuk
-        const listColor = [
-            "red",
-            "green",
-            "yellow",
-            "magenta",
-            "cyan",
-            "white",
-            "blue",
-        ];
-        const randomColor =
-            listColor[Math.floor(Math.random() * listColor.length)];
-        console.log(
-            chalk.yellow.bold("Credit : Halz"),
-            chalk.green.bold("[ WhatsApp ]"),
-            chalk[randomColor](pushname),
-            chalk[randomColor](" : "),
-            chalk.white(body),
-        );
-
-        // Hanya proses jika prefix "!" (abaikan kalau tidak pakai prefix)
-        if (!body.startsWith("!")) return;
-
-        // Paksa command jadi lowercase agar !MENU / !Menu / !menu sama saja
-        msg.message.conversation = body.charAt(0) + body.slice(1).toLowerCase();
-
-        // Panggil handler command asli di halz.js
-        require("./halz")(halz, m);
     });
 }
 
@@ -209,6 +175,22 @@ app.post("/delete-file", (req, res) => {
     console.log(`❌ File dihapus: ${nama}`);
 
     res.json({ success: true, message: `File ${nama} berhasil dihapus!` });
+});
+
+// Endpoint file list
+app.get("/file_list", (req, res) => {
+    if (!fs.existsSync(filePath)) {
+        return res.json({ files: [] });
+    }
+
+    let fileData = [];
+    try {
+        fileData = JSON.parse(fs.readFileSync(filePath));
+    } catch (e) {
+        console.error("Error membaca file_list.json:", e);
+    }
+
+    res.json({ files: fileData });
 });
 
 // Jalankan bot
