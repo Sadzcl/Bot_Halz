@@ -21,6 +21,9 @@ const pino = require("pino");
 const chalk = require("chalk");
 const readline = require("readline");
 
+// Import handler
+const handler = require("./halz");
+
 // Metode Pairing
 
 const usePairingCode = true;
@@ -110,6 +113,24 @@ async function connectToWhatsApp() {
         } else if (connection === "open") {
             console.log(chalk.green("✔ Bot Berhasil Terhubung Ke WhatsApp"));
             isConnecting = false;
+        }
+    });
+
+    // Log pesan yang diawali "!"
+    halz.ev.on("messages.upsert", async (m) => {
+        const msg = m.messages[0];
+        if (!msg.message) return;
+
+        const text =
+            msg.message.conversation ||
+            msg.message.extendedTextMessage?.text ||
+            "";
+
+        if (text.startsWith("!")) {
+            console.log(`📩 Command diterima: ${text}`);
+
+            // Panggil handler utama
+            handler(halz, m);
         }
     });
 }
